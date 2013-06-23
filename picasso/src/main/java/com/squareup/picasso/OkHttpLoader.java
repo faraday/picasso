@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import static com.squareup.picasso.Utils.parseResponseSourceHeader;
 
 /** A {@link Loader} which uses OkHttp to download images. */
@@ -29,6 +31,16 @@ public class OkHttpLoader implements Loader {
       client.setResponseCache(new HttpResponseCache(cacheDir, MAX_SIZE));
     } catch (IOException ignored) {
     }
+  }
+  
+  public OkHttpLoader(Context context, SSLSocketFactory socketFactory) {
+	this(new OkHttpClient());
+	try {
+	  File cacheDir = new File(context.getApplicationContext().getCacheDir(), PICASSO_CACHE);
+	  client.setResponseCache(new HttpResponseCache(cacheDir, MAX_SIZE));
+	  client.setSslSocketFactory(socketFactory);
+	} catch (IOException ignored) {
+	}
   }
 
   /**

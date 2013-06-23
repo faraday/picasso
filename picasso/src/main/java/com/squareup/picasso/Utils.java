@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import static android.media.ExifInterface.ORIENTATION_NORMAL;
 import static android.media.ExifInterface.ORIENTATION_ROTATE_180;
 import static android.media.ExifInterface.ORIENTATION_ROTATE_270;
@@ -180,6 +182,15 @@ final class Utils {
       return new UrlConnectionLoader(context);
     }
   }
+  
+  static Loader createSecureLoader(Context context, SSLSocketFactory socketFactory) {
+	  try {
+		  Class.forName("com.squareup.okhttp.OkHttpClient");
+		  return OkHttpLoaderCreator.createSecure(context, socketFactory);
+	  } catch (ClassNotFoundException e) {
+		  return new UrlConnectionLoader(context, socketFactory);
+	  }
+  }
 
   static class PicassoThreadFactory implements ThreadFactory {
     @SuppressWarnings("NullableProblems")
@@ -208,6 +219,9 @@ final class Utils {
   private static class OkHttpLoaderCreator {
     static Loader create(Context context) {
       return new OkHttpLoader(context);
+    }   
+    static Loader createSecure(Context context, SSLSocketFactory socketFactory) {
+      return new OkHttpLoader(context, socketFactory);
     }
   }
 }

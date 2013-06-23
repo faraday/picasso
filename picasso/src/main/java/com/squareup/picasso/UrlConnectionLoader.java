@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
+
 import static com.squareup.picasso.Utils.parseResponseSourceHeader;
 
 /**
@@ -23,14 +26,24 @@ public class UrlConnectionLoader implements Loader {
   static volatile Object cache;
 
   private final Context context;
+  private SSLSocketFactory socketFactory;
 
   public UrlConnectionLoader(Context context) {
     this.context = context.getApplicationContext();
+  }
+  
+  public UrlConnectionLoader(Context context, SSLSocketFactory socketFactory) {
+	    this.context = context.getApplicationContext();
+	    this.socketFactory = socketFactory;
   }
 
   protected HttpURLConnection openConnection(String path) throws IOException {
     return (HttpURLConnection) new URL(path).openConnection();
   }
+  
+  protected HttpsURLConnection openSecureConnection(String path) throws IOException {
+	    return (HttpsURLConnection) new URL(path).openConnection();
+	  }
 
   @Override public Response load(String url, boolean localCacheOnly) throws IOException {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
@@ -39,6 +52,9 @@ public class UrlConnectionLoader implements Loader {
 
     HttpURLConnection connection = openConnection(url);
     connection.setUseCaches(true);
+    if(connection instanceof HttpsURLConnection && socketFactory != null) {
+    	((HttpsURLConnection) connection).setSSLSocketFactory(socketFactory);
+    }
     if (localCacheOnly) {
       connection.setRequestProperty("Cache-Control", "only-if-cached");
     }

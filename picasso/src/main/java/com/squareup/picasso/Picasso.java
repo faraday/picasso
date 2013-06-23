@@ -20,6 +20,8 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import static com.squareup.picasso.Loader.Response;
 import static com.squareup.picasso.Request.Type;
 import static com.squareup.picasso.Utils.calculateInSampleSize;
@@ -462,6 +464,14 @@ public class Picasso {
     }
     return singleton;
   }
+  
+  /** Secure, global default {@link Picasso} instance. */
+  public static Picasso with(Context context, SSLSocketFactory socketFactory) {
+	if (singleton == null) {
+	  singleton = new Builder(context).setSSLSocketFactory(socketFactory).build();
+	}
+	return singleton;
+  }
 
   /** Fluent API for creating {@link Picasso} instances. */
   @SuppressWarnings("UnusedDeclaration") // Public API.
@@ -470,6 +480,7 @@ public class Picasso {
     private Loader loader;
     private ExecutorService service;
     private Cache memoryCache;
+    private SSLSocketFactory socketFactory;
 
     /** Start building a new {@link Picasso} instance. */
     public Builder(Context context) {
@@ -477,6 +488,11 @@ public class Picasso {
         throw new IllegalArgumentException("Context must not be null.");
       }
       this.context = context.getApplicationContext();
+    }
+    
+    public Builder setSSLSocketFactory(SSLSocketFactory socketFactory) {
+    	this.socketFactory = socketFactory;
+    	return this;
     }
 
     /** Specify the {@link Loader} that will be used for downloading images. */
@@ -520,7 +536,12 @@ public class Picasso {
       Context context = this.context;
 
       if (loader == null) {
-        loader = Utils.createDefaultLoader(context);
+    	if(socketFactory == null) {
+    	  loader = Utils.createDefaultLoader(context);
+    	}
+    	else {
+    	  loader = Utils.createSecureLoader(context, socketFactory);
+    	}
       }
       if (memoryCache == null) {
         memoryCache = new LruCache(context);
